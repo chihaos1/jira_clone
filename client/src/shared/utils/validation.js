@@ -1,36 +1,51 @@
-export const is = {
-  match: (testFn, message = '') => (value, fieldValues) => !testFn(value, fieldValues) && message,
+import Joi from 'joi';
 
-  required: () => value => isNilOrEmptyString(value) && 'This field is required',
+export const createIssueSchema = Joi.object({
+  title: Joi.string().min(1).max(200).required().label('Title'),
+  description: Joi.string().allow('').max(5000).label('Description'),
+  type: Joi.string().required().label('Type'),
+  status: Joi.string().required().label('Status'),
+  priority: Joi.number().required().label('Priority'),
+  listPosition: Joi.number().required().label('List Position'),
+  reporterId: Joi.string().required().label('Reporter'),
+  projectId: Joi.string().required().label('Project'),
+  userIds: Joi.array().items(Joi.string()).label('Users'),
+});
 
-  minLength: min => value => !!value && value.length < min && `Must be at least ${min} characters`,
+export const updateIssueSchema = Joi.object({
+  title: Joi.string().min(1).max(200).label('Title'),
+  description: Joi.string().allow('').max(5000).label('Description'),
+  type: Joi.string().label('Type'),
+  status: Joi.string().label('Status'),
+  priority: Joi.number().label('Priority'),
+  listPosition: Joi.number().label('List Position'),
+  reporterId: Joi.string().label('Reporter'),
+  projectId: Joi.string().label('Project'),
+  userIds: Joi.array().items(Joi.string()).label('Users'),
+});
 
-  maxLength: max => value => !!value && value.length > max && `Must be at most ${max} characters`,
+export const createCommentSchema = Joi.object({
+  body: Joi.string().min(1).max(5000).required().label('Body'),
+  issueId: Joi.string().required().label('Issue Id'),
+  userId: Joi.string().required().label('User Id'),
+});
 
-  notEmptyArray: () => value =>
-    Array.isArray(value) && value.length === 0 && 'Please add at least one item',
+export const updateCommentSchema = Joi.object({
+  body: Joi.string().min(1).max(5000).label('Body'),
+});
 
-  email: () => value => !!value && !/.+@.+\..+/.test(value) && 'Must be a valid email',
+export const createProjectSchema = Joi.object({
+  name: Joi.string().min(1).max(200).required().label('Name'),
+  url: Joi.string().max(200).label('Url'),
+  description: Joi.string().allow('').max(5000).label('Description'),
+  category: Joi.string().min(1).max(200).required().label('Category'),
+  leaderId: Joi.string().required().label('Lead'),
+});
 
-  url: () => value =>
-    !!value &&
-    // eslint-disable-next-line no-useless-escape
-    !/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/.test(value) &&
-    'Must be a valid URL',
-};
-
-const isNilOrEmptyString = value => value === undefined || value === null || value === '';
-
-export const generateErrors = (fieldValues, fieldValidators) => {
-  const errors = {};
-
-  Object.entries(fieldValidators).forEach(([fieldName, validators]) => {
-    [validators].flat().forEach(validator => {
-      const errorMessage = validator(fieldValues[fieldName], fieldValues);
-      if (errorMessage && !errors[fieldName]) {
-        errors[fieldName] = errorMessage;
-      }
-    });
-  });
-  return errors;
-};
+export const updateProjectSchema = Joi.object({
+  name: Joi.string().min(1).max(200).label('Name'),
+  url: Joi.string().max(200).label('Url'),
+  description: Joi.string().allow('').max(5000).label('Description'),
+  category: Joi.string().min(1).max(200).label('Category'),
+  leaderId: Joi.string().label('Lead'),
+});
