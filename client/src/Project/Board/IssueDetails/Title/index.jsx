@@ -1,54 +1,108 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+import { CHARACTER_LIMITS, getCharacterCountInfo } from 'shared/utils/validation';
 
-import { TitleTextarea, ErrorText } from './Styles';
+import { Title, TitleTextarea, CharacterCounter } from './Styles';
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
   updateIssue: PropTypes.func.isRequired,
 };
 
-const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
+const IssueDetailsTitle = ({ issue, updateIssue }) => {
+  const [title, setTitle] = useState(issue.title);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const $textareaRef = useRef();
 
-  const handleTitleChange = () => {
-    setError(null);
+  const characterInfo = getCharacterCountInfo(title, CHARACTER_LIMITS.ISSUE_TITLE);
 
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
+  useEffect(() => {
+    if (isEditing) {
+      const $textarea = $textareaRef.current;
+      $textarea.focus();
+      $textarea.select();
+    }
+  }, [isEditing]);
 
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
+  const handleTitleChange = title => {
+    // Don't allow changes that exceed the character limit
+    if (title.length <= CHARACTER_LIMITS.ISSUE_TITLE) {
+      setTitle(title);
+    }
+  };
 
-    if (errors.title) {
-      setError(errors.title);
-    } else {
+  const handleTitleSubmit = () => {
+    // Only submit if within character limit and not empty
+    if (title.trim() && !characterInfo.isOverLimit) {
+      setIsEditing(false);
       updateIssue({ title });
     }
   };
 
+  const handleTitleCancel = () => {
+    setTitle(issue.title);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = event => {
+    const { keyCode } = event;
+
+    if (keyCode === KeyCodes.ENTER) {
+      event.preventDefault();
+      handleTitleSubmit();
+    }
+    if (keyCode === KeyCodes.ESCAPE) {
+      handleTitleCancel();
+    }
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    handleTitleSubmit();
+  };
+
+  const shouldShowCounter = isEditing || isFocused || characterInfo.isNearLimit || characterInfo.isOverLimit;
+
   return (
-    <Fragment>
+    <Title>
       <TitleTextarea
         minRows={1}
         placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
+        value={title}
+        onChange={handleTitleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => {
+          setIsEditing(true);
+          handleFocus();
         }}
+        onBlur={handleBlur}
+        ref={$textareaRef}
+        data-testid="issue-title"
+        isOverLimit={characterInfo.isOverLimit}
       />
-      {error && <ErrorText>{error}</ErrorText>}
-    </Fragment>
+      {shouldShowCounter && (
+        <CharacterCounter 
+          isOverLimit={characterInfo.isOverLimit}
+          isNearLimit={characterInfo.isNearLimit}
+        >
+          {characterInfo.currentLength}/{characterInfo.limit}
+          {characterInfo.isOverLimit && (
+            <span> - {Math.abs(characterInfo.remaining)} characters over limit</span>
+          )}
+        </CharacterCounter>
+      )}
+    </Title>
   );
 };
 
-ProjectBoardIssueDetailsTitle.propTypes = propTypes;
+IssueDetailsTitle.propTypes = propTypes;
 
-export default ProjectBoardIssueDetailsTitle;
+export default IssueDetailsTitle;
