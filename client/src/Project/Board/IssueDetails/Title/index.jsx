@@ -1,54 +1,55 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import styled from 'styled-components';
 
-import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+const MAX_TITLE_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 500;
 
-import { TitleTextarea, ErrorText } from './Styles';
+const TitleInput = styled.input`
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 8px;
+`;
 
-const propTypes = {
-  issue: PropTypes.object.isRequired,
-  updateIssue: PropTypes.func.isRequired,
-};
+const Counter = styled.div`
+  font-size: 12px;
+  color: ${props => (props.isOverLimit ? 'red' : '#666')};
+  text-align: right;
+  margin-bottom: 8px;
+`;
 
-const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
+const Title = ({ title, onChange }) => {
+  const [titleValue, setTitleValue] = useState(title);
 
-  const handleTitleChange = () => {
-    setError(null);
-
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
-      updateIssue({ title });
+  const handleTitleChange = (e) => {
+    const newValue = e.target.value;
+    if (newValue.length <= MAX_TITLE_LENGTH) {
+      setTitleValue(newValue);
+      onChange(newValue);
     }
   };
 
   return (
-    <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
+    <div>
+      <TitleInput
+        type="text"
+        value={titleValue}
+        onChange={handleTitleChange}
+        placeholder="Enter issue title"
       />
-      {error && <ErrorText>{error}</ErrorText>}
-    </Fragment>
+      <Counter isOverLimit={titleValue.length > MAX_TITLE_LENGTH}>
+        {titleValue.length}/{MAX_TITLE_LENGTH}
+      </Counter>
+    </div>
   );
 };
 
-ProjectBoardIssueDetailsTitle.propTypes = propTypes;
+Title.propTypes = {
+  title: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
 
-export default ProjectBoardIssueDetailsTitle;
+export default Title;
