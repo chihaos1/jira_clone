@@ -1,10 +1,10 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 
 import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+import { Form, Field } from 'shared/components';
 
-import { TitleTextarea, ErrorText } from './Styles';
+import { Title, TitleTextarea } from './Styles';
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
@@ -12,39 +12,32 @@ const propTypes = {
 };
 
 const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
-
-  const handleTitleChange = () => {
-    setError(null);
-
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
-      updateIssue({ title });
-    }
+  const handleTitleChange = title => {
+    updateIssue({ title });
   };
 
   return (
     <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
-      />
-      {error && <ErrorText>{error}</ErrorText>}
+      <Title>Title</Title>
+      <Form
+        enableReinitialize
+        initialValues={{ title: issue.title }}
+        onSubmit={values => handleTitleChange(values.title)}
+      >
+        <Field.TextArea
+          name="title"
+          placeholder="Enter issue title..."
+          minRows={1}
+          maxRows={2}
+          onBlur={form => form.handleSubmit()}
+          onKeyDown={(event, form) => {
+            if (event.keyCode === KeyCodes.ENTER) {
+              event.target.blur();
+            }
+          }}
+          render={({ fieldProps }) => <TitleTextarea {...fieldProps} />}
+        />
+      </Form>
     </Fragment>
   );
 };
