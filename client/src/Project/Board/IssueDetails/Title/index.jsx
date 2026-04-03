@@ -1,10 +1,10 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+import { Form, Textarea } from 'shared/components';
 
-import { TitleTextarea, ErrorText } from './Styles';
+import { Title, TitleTextarea, CharacterCounter } from './Styles';
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
@@ -12,39 +12,51 @@ const propTypes = {
 };
 
 const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
+  const [isEditing, setEditing] = useState(false);
+  const [title, setTitle] = useState(issue.title);
 
-  const handleTitleChange = () => {
-    setError(null);
-
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
-      updateIssue({ title });
+  const handleTitleChange = (value) => {
+    if (value.length <= 100) {
+      setTitle(value);
     }
+  };
+
+  const handleTitleSubmit = () => {
+    setEditing(false);
+    updateIssue({ title });
+  };
+
+  const handleTitleKeyDown = (event) => {
+    if (event.keyCode === KeyCodes.ENTER) {
+      event.preventDefault();
+      handleTitleSubmit();
+    }
+  };
+
+  const handleTitleCancel = () => {
+    setEditing(false);
+    setTitle(issue.title);
   };
 
   return (
     <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
-      />
-      {error && <ErrorText>{error}</ErrorText>}
+      {isEditing ? (
+        <Form.Field>
+          <TitleTextarea
+            autoFocus
+            placeholder="Short summary"
+            value={title}
+            onChange={handleTitleChange}
+            onKeyDown={handleTitleKeyDown}
+            onBlur={handleTitleSubmit}
+          />
+          <CharacterCounter isNearLimit={title.length > 80}>
+            {title.length}/100
+          </CharacterCounter>
+        </Form.Field>
+      ) : (
+        <Title onClick={() => setEditing(true)}>{issue.title}</Title>
+      )}
     </Fragment>
   );
 };
