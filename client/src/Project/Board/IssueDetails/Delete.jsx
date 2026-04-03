@@ -1,40 +1,54 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 
-import api from 'shared/utils/api';
+import { IssueType } from 'shared/constants/issues';
+import { IssueStatusCopy } from 'shared/constants/issues';
+import { connect } from 'react-redux';
+import { deleteIssue } from 'redux/actions/project';
+
 import toast from 'shared/utils/toast';
-import { Button, ConfirmModal } from 'shared/components';
+import { ConfirmModal } from 'shared/components';
+
+import { SectionTitle } from '../Styles';
+import { DeleteButton } from './Styles';
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
-  fetchProject: PropTypes.func.isRequired,
+  updateIssue: PropTypes.func.isRequired,
+  deleteIssue: PropTypes.func.isRequired,
   modalClose: PropTypes.func.isRequired,
 };
 
-const ProjectBoardIssueDetailsDelete = ({ issue, fetchProject, modalClose }) => {
+const IssueDetailsDelete = ({ issue, deleteIssue, modalClose }) => {
   const handleIssueDelete = async () => {
-    try {
-      await api.delete(`/issues/${issue.id}`);
-      await fetchProject();
-      modalClose();
-    } catch (error) {
-      toast.error(error);
-    }
+    await deleteIssue(issue.id);
+    modalClose();
+    toast.success('Issue has been successfully deleted.');
   };
 
   return (
     <ConfirmModal
       title="Are you sure you want to delete this issue?"
-      message="Once you delete, it's gone for good."
-      confirmText="Delete issue"
-      onConfirm={handleIssueDelete}
-      renderLink={modal => (
-        <Button icon="trash" iconSize={19} variant="empty" onClick={modal.open} />
+      description="Once you delete, it will be gone for good."
+      render={({ open, close }) => (
+        <Fragment>
+          <SectionTitle>Delete issue</SectionTitle>
+          <DeleteButton onClick={open}>Delete</DeleteButton>
+          {open && (
+            <ConfirmModal.Dialog
+              onConfirm={() => {
+                handleIssueDelete();
+                close();
+              }}
+              onCancel={close}
+            />
+          )}
+        </Fragment>
       )}
     />
   );
 };
 
-ProjectBoardIssueDetailsDelete.propTypes = propTypes;
+IssueDetailsDelete.propTypes = propTypes;
 
-export default ProjectBoardIssueDetailsDelete;
+export default connect(null, { deleteIssue })(IssueDetailsDelete);
