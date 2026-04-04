@@ -1,10 +1,9 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
-
-import { TitleTextarea, ErrorText } from './Styles';
+import { is } from 'shared/utils/validation';
+import { TextEditedContent, TextEditor, Actions, CharacterCounter } from './Styles';
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
@@ -12,39 +11,66 @@ const propTypes = {
 };
 
 const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
+  const [isEditing, setEditing] = useState(false);
+  const [title, setTitle] = useState(issue.title);
 
-  const handleTitleChange = () => {
-    setError(null);
+  const handleTitleChange = value => {
+    // Limit to 100 characters
+    if (value.length <= 100) {
+      setTitle(value);
+    }
+  };
 
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
+  const handleTitleSubmit = () => {
+    if (title.trim() !== issue.title) {
+      updateIssue({ title: title.trim() });
+    }
+    setEditing(false);
+  };
 
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
+  const handleTitleCancel = () => {
+    setTitle(issue.title);
+    setEditing(false);
+  };
 
-    if (errors.title) {
-      setError(errors.title);
-    } else {
-      updateIssue({ title });
+  const handleKeyDown = event => {
+    if (event.keyCode === KeyCodes.ENTER) {
+      event.preventDefault();
+      handleTitleSubmit();
+    }
+    if (event.keyCode === KeyCodes.ESCAPE) {
+      handleTitleCancel();
     }
   };
 
   return (
     <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
-      />
-      {error && <ErrorText>{error}</ErrorText>}
+      {isEditing ? (
+        <Fragment>
+          <TextEditor
+            placeholder="Short summary"
+            value={title}
+            onChange={handleTitleChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleTitleSubmit}
+          />
+          <CharacterCounter isNearLimit={title.length > 80}>
+            {title.length}/100
+          </CharacterCounter>
+          <Actions>
+            <button type="button" onClick={handleTitleSubmit}>
+              Save
+            </button>
+            <button type="button" onClick={handleTitleCancel}>
+              Cancel
+            </button>
+          </Actions>
+        </Fragment>
+      ) : (
+        <TextEditedContent onClick={() => setEditing(true)}>
+          {issue.title}
+        </TextEditedContent>
+      )}
     </Fragment>
   );
 };
