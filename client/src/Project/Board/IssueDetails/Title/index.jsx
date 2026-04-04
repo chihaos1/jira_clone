@@ -1,54 +1,48 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+import { IssueTitle } from './Styles';
 
-import { TitleTextarea, ErrorText } from './Styles';
+const Title = ({ issue, updateIssue }) => {
+  const [title, setTitle] = useState(issue.title);
+  const characterLimit = 100;
 
-const propTypes = {
-  issue: PropTypes.object.isRequired,
-  updateIssue: PropTypes.func.isRequired,
-};
+  const handleTitleChange = (e) => {
+    const newTitle = e.target.value;
+    if (newTitle.length <= characterLimit) {
+      setTitle(newTitle);
+    }
+  };
 
-const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
-
-  const handleTitleChange = () => {
-    setError(null);
-
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
+  const handleTitleBlur = () => {
+    if (title !== issue.title) {
       updateIssue({ title });
     }
   };
 
   return (
-    <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
+    <>
+      <IssueTitle
+        value={title}
+        onChange={handleTitleChange}
+        onBlur={handleTitleBlur}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
             event.target.blur();
           }
         }}
+        maxLength={characterLimit}
       />
-      {error && <ErrorText>{error}</ErrorText>}
-    </Fragment>
+      <div style={{ fontSize: '13px', color: '#5e6c84', marginTop: '5px' }}>
+        {title.length}/{characterLimit}
+      </div>
+    </>
   );
 };
 
-ProjectBoardIssueDetailsTitle.propTypes = propTypes;
+Title.propTypes = {
+  issue: PropTypes.object.isRequired,
+  updateIssue: PropTypes.func.isRequired,
+};
 
-export default ProjectBoardIssueDetailsTitle;
+export default Title;
