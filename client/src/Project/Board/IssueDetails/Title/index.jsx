@@ -1,54 +1,48 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Textarea, TitleContainer, CharacterCounter } from './Styles';
 
-import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
-
-import { TitleTextarea, ErrorText } from './Styles';
+const MAX_TITLE_LENGTH = 100;
 
 const propTypes = {
   issue: PropTypes.object.isRequired,
   updateIssue: PropTypes.func.isRequired,
 };
 
-const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
+const IssueDetailsTitle = ({ issue, updateIssue }) => {
+  const [title, setTitle] = useState(issue.title);
 
-  const handleTitleChange = () => {
-    setError(null);
+  const handleTitleChange = event => {
+    const newTitle = event.target.value;
+    if (newTitle.length <= MAX_TITLE_LENGTH) {
+      setTitle(newTitle);
+    }
+  };
 
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
+  const handleTitleBlur = () => {
+    if (title !== issue.title) {
       updateIssue({ title });
     }
   };
 
+  const remaining = MAX_TITLE_LENGTH - title.length;
+  const isNearLimit = remaining <= 20;
+
   return (
-    <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
+    <TitleContainer>
+      <Textarea
+        value={title}
+        onChange={handleTitleChange}
+        onBlur={handleTitleBlur}
+        maxLength={MAX_TITLE_LENGTH}
       />
-      {error && <ErrorText>{error}</ErrorText>}
-    </Fragment>
+      <CharacterCounter isNearLimit={isNearLimit}>
+        {title.length}/{MAX_TITLE_LENGTH}
+      </CharacterCounter>
+    </TitleContainer>
   );
 };
 
-ProjectBoardIssueDetailsTitle.propTypes = propTypes;
+IssueDetailsTitle.propTypes = propTypes;
 
-export default ProjectBoardIssueDetailsTitle;
+export default IssueDetailsTitle;
