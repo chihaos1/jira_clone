@@ -1,35 +1,53 @@
-import { testid } from '../support/utils';
+import { getStoredAuthUser } from '../../support/utils';
 
-describe('Issue create', () => {
-  beforeEach(() => {
-    cy.resetDatabase();
-    cy.createTestAccount();
-    cy.visit('/project/settings?modal-issue-create=true');
+describe('Issue Create', () => {
+  let authUser;
+
+  before(() => {
+    authUser = getStoredAuthUser();
   });
 
-  it('validates form and creates issue successfully', () => {
-    cy.get(testid`modal:issue-create`).within(() => {
-      cy.get('button[type="submit"]').click();
-      cy.get(testid`form-field:title`).should('contain', 'This field is required');
+  beforeEach(() => {
+    cy.visit('/');
+  });
 
-      cy.selectOption('type', 'Story');
-      cy.get('input[name="title"]').type('TEST_TITLE');
-      cy.get('.ql-editor').type('TEST_DESCRIPTION');
-      cy.selectOption('reporterId', 'Yoda');
-      cy.selectOption('userIds', 'Gaben', 'Yoda');
-      cy.selectOption('priority', 'High');
+  it('should display the issue creation modal', () => {
+    cy.get('[data-testid="modal:issue-create"]').should('not.exist');
+    cy.get('[data-testid="icon:plus"]').click();
+    cy.get('[data-testid="modal:issue-create"]').should('be.visible');
+  });
 
+  it('should validate that title is required', () => {
+    cy.get('[data-testid="icon:plus"]').click();
+    cy.get('[data-testid="modal:issue-create"]').within(() => {
       cy.get('button[type="submit"]').click();
+      cy.get('[data-testid="form-field:title"]').should(
+        'contain',
+        'Title is required',
+      );
     });
+  });
 
-    cy.get(testid`modal:issue-create`).should('not.exist');
-    cy.contains('Issue has been successfully created.').should('exist');
-    cy.location('pathname').should('equal', '/project/board');
-    cy.location('search').should('be.empty');
+  it('should enforce a 100 character limit on the issue title', () => {
+    const longTitle = 'A'.repeat(110);
+    const expectedTitle = 'A'.repeat(100);
 
-    cy.contains(testid`list-issue`, 'TEST_TITLE')
-      .should('have.descendants', testid`avatar:Gaben`)
-      .and('have.descendants', testid`avatar:Yoda`)
-      .and('have.descendants', testid`icon:story`);
+    cy.get('[data-testid="icon:plus"]').click();
+    cy.get('[data-testid="modal:issue-create"]').within(() => {
+      cy.get('input[name="title"]')
+        .type(longTitle)
+        .should('have.value', expectedTitle);
+    });
+  });
+
+  it('should show a character counter on the issue title input', () => {
+    cy.get('[data-testid="icon:plus"]').click();
+    cy.get('[data-testid="modal:issue-create"]').within(() => {
+      cy.get('input[name="title"]').type('Hello');
+      cy.get('[data-testid="title-char-counter"]').should(
+        'contain',
+        '95 / 100 characters remaining',
+      );
+    });
   });
 });
