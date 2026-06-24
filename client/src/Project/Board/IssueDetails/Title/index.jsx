@@ -1,54 +1,30 @@
-import React, { Fragment, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
-import { KeyCodes } from 'shared/constants/keyCodes';
-import { is, generateErrors } from 'shared/utils/validation';
+const Title = ({ initialTitle }) => {
+  const [title, setTitle] = useState(initialTitle);
+  const [charCount, setCharCount] = useState(initialTitle.length);
+  const maxChars = 100;
 
-import { TitleTextarea, ErrorText } from './Styles';
-
-const propTypes = {
-  issue: PropTypes.object.isRequired,
-  updateIssue: PropTypes.func.isRequired,
-};
-
-const ProjectBoardIssueDetailsTitle = ({ issue, updateIssue }) => {
-  const $titleInputRef = useRef();
-  const [error, setError] = useState(null);
-
-  const handleTitleChange = () => {
-    setError(null);
-
-    const title = $titleInputRef.current.value;
-    if (title === issue.title) return;
-
-    const errors = generateErrors({ title }, { title: [is.required(), is.maxLength(200)] });
-
-    if (errors.title) {
-      setError(errors.title);
-    } else {
-      updateIssue({ title });
+  const handleTitleChange = (e) => {
+    const newTitle = e.target.value;
+    if (newTitle.length <= maxChars) {
+      setTitle(newTitle);
+      setCharCount(newTitle.length);
     }
   };
 
   return (
-    <Fragment>
-      <TitleTextarea
-        minRows={1}
-        placeholder="Short summary"
-        defaultValue={issue.title}
-        ref={$titleInputRef}
-        onBlur={handleTitleChange}
-        onKeyDown={event => {
-          if (event.keyCode === KeyCodes.ENTER) {
-            event.target.blur();
-          }
-        }}
+    <div>
+      <input
+        type="text"
+        value={title}
+        onChange={handleTitleChange}
+        maxLength={maxChars}
+        placeholder="Enter issue title"
       />
-      {error && <ErrorText>{error}</ErrorText>}
-    </Fragment>
+      <div>{charCount}/{maxChars} characters</div>
+    </div>
   );
 };
 
-ProjectBoardIssueDetailsTitle.propTypes = propTypes;
-
-export default ProjectBoardIssueDetailsTitle;
+export default Title;
