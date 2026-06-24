@@ -1,32 +1,46 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
+import { color, font, mixin } from 'shared/utils/styles';
 
-import { color, font } from 'shared/utils/styles';
-import { Textarea } from 'shared/components';
-
-export const TitleTextarea = styled(Textarea)`
-  margin: 18px 0 0 -8px;
-  height: 44px;
+export const Title = styled.textarea`
   width: 100%;
-  textarea {
-    padding: 7px 7px 8px;
-    line-height: 1.28;
-    border: none;
-    resize: none;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 24px;
+  font-weight: ${font.bold};
+  line-height: 1.4;
+  resize: none;
+  overflow: hidden;
+  color: ${color.textDark};
+  background: #fff;
+  transition: background 0.1s;
+  ${mixin.scrollableY}
+
+  &:focus,
+  &:hover {
+    background: ${color.backgroundLight};
+    border-color: ${color.borderInputFocus};
+  }
+  &:focus {
+    outline: none;
+    border-color: ${color.borderInputFocus};
     background: #fff;
-    border: 1px solid transparent;
-    box-shadow: 0 0 0 1px transparent;
-    transition: background 0.1s;
-    ${font.size(24)}
-    ${font.medium}
-    &:hover:not(:focus) {
-      background: ${color.backgroundLight};
-    }
   }
 `;
 
-export const ErrorText = styled.div`
-  padding-top: 4px;
-  color: ${color.danger};
-  ${font.size(13)}
-  ${font.medium}
+export const CharCounter = styled.div`
+  margin-top: 4px;
+  font-size: 12px;
+  text-align: right;
+  color: ${({ isAtLimit, isNearLimit }) =>
+    isAtLimit
+      ? color.danger
+      : isNearLimit
+      ? color.warning
+      : color.textMedium};
+  ${({ isAtLimit }) =>
+    isAtLimit &&
+    css`
+      font-weight: ${font.medium};
+    `}
 `;
